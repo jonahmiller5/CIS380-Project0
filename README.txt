@@ -1,0 +1,21 @@
+ENIAC USERNAME: jonahmil
+
+
+LIST OF SUBMITTED SOURCE FILES: shredder.c, Makefile
+
+
+EXTRA CREDIT ANSWERS: 
+Like SIGKILL, SIGSTOP cannot be ignored or handled, and will force the program to quit. If unhandled, the following signals will terminate the program: SIGALRM, SIGEMT, SIGHUP, SIGINT, SIGIO, SIGLOST, SIGPIPE, SIGPOLL, SIGPROF, SIGPWR, SIGSTKFLT, SIGTERM, SIGUSR1, SIGUSR2, SIGVTALRM. This information is found on the man page for signal(7) at http://man7.org/linux/man-pages/man7/signal.7.html
+
+
+COMPILATION INSTRUCTIONS: To remove previous compilations, call "make clobber". To compile, call "make". To run, call ./penn-shredder (with or without a timer argument)
+
+
+OVERVIEW OF WORK ACCOMPLISHED: In this assignment, I created a simple UNIX shell which could be used to execute simple binary commands. Through this assignment, I learned how a virtual machine actually worked. I also learned exactly what a shell was: a program which runs  until told to stop and waits for input, which it then tries to execute as binary commands. Through the process of learning these things, I used the Vagrant virtual machine to design and test my shredder shell, which by the end of the project I could use to execute the commands in /bin. In order to do so, I learned about how entries from standard input could be parsed and executed with system calls. Once I learned this, I was able to implement a basic shell, very similar to the bash shell. The twist of shredder was that it would time programs out if they took longer than the time argument that the user provides. Through this twist, I learned what a system signal is, and how to produce and handle them (specifically through user input and with the alarm system call). Once I truly understood these concepts, I was able to implement the timer aspect of the shredder shell and complete the assignment. TL;DR I learned what a shell was, what a system call was, and how system calls could be used to create and alter a shell, and in doing so I was able to create my own shell.
+
+
+DESCRIPTION OF CODE AND CODE LAYOUT: At the top of my code, I had my signal handler function. This was necessary because if it was declared after the main method, it would not compile. This signal handler would re-prompt the user if the SIGINT signal was sent, write the timeout message and reprompt the user if the SIGALRM signal was sent, and do nothing for any other signal. In the main, my program began by parsing the command line arguments to start the shredder shell. If there was a valid second argument, the timer would be set to that argument. Otherwise, the timer would be set to 0. After the timer value is determined, the SIGINT and SIGALRM signals are configured to be sent to the signal handler function. Then the user would be prompted and the loop would start. At each iteration, standard input would be read. If the input reads EOF, the shell exits. If not, it checks to see if anything else has been read. If nothing has been read, the loop restarts. If a newline character has been read, the user is reprompted and the loop restarts. If something else has been read, the program proceeds. It then checks if the input is longer than 1024 characters. If it is, then it truncates the input and flushes everything past the 1024th byte, and continues. Then the alarm is set to the timer value and the program forks. If the current process is the parent, it waits until the child completes, cancels the timer and reprompts the user. If the current process is the child, it parses the input to find the command and executes that command. If the execution fails, the program cancels the timer and reports the error which occurred. If execution takes longer than the timer, SIGALRM is sent to the signal handler and it executes as described above. If at any time SIGINT is sent by the user, the signal handler will receive the signal and reprompt the user.
+
+
+GENERAL COMMENTS AND ANYTHING THAT CAN HELP US GRADE YOUR CODE: Hot take but I really enjoyed this assignment. 
+My global variable "sigint_sent" is there because if I wanted to interrupt an execution in the middle, my shell would double reprompt, so this boolean helps me prevent that.
